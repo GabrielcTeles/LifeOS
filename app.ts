@@ -42,192 +42,24 @@ if (hasValidKey) {
 // Seeding Default Mock Data if db.json doesn't exist
 const initialData = {
   profile: {
-    name: "Gabriel Telles",
-    email: "gabrielctelless@outlook.com",
+    name: "",
+    email: "",
     currency: "BRL" as const,
-    theme: "light" as const,
+    theme: "light" as const
   },
-  transactions: [
-    {
-      id: "t1",
-      date: "2026-07-01",
-      amount: 120.50,
-      type: "despesa" as const,
-      category: "Alimentação",
-      subcategory: "Restaurante",
-      description: "Jantar - Pizzaria Camelo",
-      currency: "BRL" as const,
-      tags: ["lazer", "fim-de-semana"],
-    },
-    {
-      id: "t2",
-      date: "2026-07-02",
-      amount: 85.00,
-      type: "despesa" as const,
-      category: "Transporte",
-      subcategory: "Uber",
-      description: "Uber Ida/Volta Escritório",
-      currency: "BRL" as const,
-      tags: ["trabalho"],
-    },
-    {
-      id: "t3",
-      date: "2026-07-03",
-      amount: 7200.00,
-      type: "receita" as const,
-      category: "Salário",
-      subcategory: "CLT",
-      description: "Salário Mensal TechCorp",
-      currency: "BRL" as const,
-      tags: ["renda-principal"],
-    },
-    {
-      id: "t4",
-      date: "2026-07-04",
-      amount: 45.90,
-      type: "despesa" as const,
-      category: "Saúde",
-      subcategory: "Farmácia",
-      description: "Medicamentos - Droga Raia",
-      currency: "BRL" as const,
-      tags: ["essenciais"],
-    },
-    {
-      id: "t5",
-      date: "2026-07-05",
-      amount: 320.00,
-      type: "despesa" as const,
-      category: "Utilities",
-      subcategory: "Energia",
-      description: "Conta de Luz - Enel",
-      currency: "BRL" as const,
-      tags: ["casa"],
-    },
-    {
-      id: "t6",
-      date: "2026-07-05",
-      amount: 150.00,
-      type: "despesa" as const,
-      category: "Lazer",
-      subcategory: "Cinema",
-      description: "Cinema + Pipoca Shopping",
-      currency: "BRL" as const,
-      tags: ["entretenimento"],
-    }
-  ],
-  investments: [
-    {
-      id: "i1",
-      ticker: "VALE3",
-      name: "Vale S.A. ON",
-      type: "Ações" as const,
-      quantity: 50,
-      purchasePrice: 62.40,
-      purchaseDate: "2026-02-15",
-      sector: "Materiais Básicos",
-      currency: "BRL" as const,
-    },
-    {
-      id: "i2",
-      ticker: "PETR4",
-      name: "Petróleo Brasileiro S.A. PN",
-      type: "Ações" as const,
-      quantity: 100,
-      purchasePrice: 35.80,
-      purchaseDate: "2026-03-10",
-      sector: "Petróleo & Gás",
-      currency: "BRL" as const,
-    },
-    {
-      id: "i3",
-      ticker: "AAPL",
-      name: "Apple Inc.",
-      type: "Ações" as const,
-      quantity: 5,
-      purchasePrice: 172.50,
-      purchaseDate: "2026-01-20",
-      sector: "Tecnologia",
-      currency: "USD" as const,
-    },
-    {
-      id: "i4",
-      ticker: "BTC",
-      name: "Bitcoin",
-      type: "Cripto" as const,
-      quantity: 0.045,
-      purchasePrice: 310000.00,
-      purchaseDate: "2026-04-05",
-      sector: "Criptomoedas",
-      currency: "BRL" as const,
-    }
-  ],
-  fixedIncome: [
-    {
-      id: "fi1",
-      type: "CDB" as const,
-      value: 15000.00,
-      rate: 110.0, // 110% do CDI
-      applicationDate: "2026-01-02",
-      maturityDate: "2028-01-02",
-      indexation: "CDI" as const,
-      liquidity: "Vencimento" as const,
-    },
-    {
-      id: "fi2",
-      type: "Tesouro Direto" as const,
-      value: 8000.00,
-      rate: 12.5, // 12.5% prefixado a.a.
-      applicationDate: "2026-03-01",
-      maturityDate: "2029-03-01",
-      indexation: "Prefixado" as const,
-      liquidity: "Vencimento" as const,
-    },
-    {
-      id: "fi3",
-      type: "LCI" as const,
-      value: 5000.00,
-      rate: 92.0, // 92% do CDI (Isento IR)
-      applicationDate: "2026-04-10",
-      maturityDate: "2027-04-10",
-      indexation: "CDI" as const,
-      liquidity: "Vencimento" as const,
-    }
-  ],
+  transactions: [],
+  investments: [],
+  fixedIncome: [],
   budgets: {
-    "Alimentação": 1200,
-    "Transporte": 400,
-    "Saúde": 300,
-    "Educação": 500,
-    "Lazer": 600,
-    "Utilities": 500,
-    "Outros": 400,
+    "Alimentação": 0,
+    "Transporte": 0,
+    "Saúde": 0,
+    "Educação": 0,
+    "Lazer": 0,
+    "Utilities": 0,
+    "Outros": 0
   },
-  bankAccounts: [
-    {
-      id: "b1",
-      bankName: "Itaú Unibanco",
-      accountType: "Corrente" as const,
-      balance: 1450.80,
-      status: "connected" as const,
-      lastSync: "2026-07-06T10:00:00Z"
-    },
-    {
-      id: "b2",
-      bankName: "Nubank",
-      accountType: "Corrente" as const,
-      balance: 3204.15,
-      status: "connected" as const,
-      lastSync: "2026-07-06T11:00:00Z"
-    },
-    {
-      id: "b3",
-      bankName: "Banco do Brasil",
-      accountType: "Poupança" as const,
-      balance: 7500.00,
-      status: "connected" as const,
-      lastSync: "2026-07-06T09:30:00Z"
-    }
-  ]
+  bankAccounts: []
 };
 
 function readDb() {

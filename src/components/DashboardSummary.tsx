@@ -30,21 +30,19 @@ export default function DashboardSummary({ data, quotes, rates, onTabChange }: D
   }, [data.investments, quotes]);
 
   const totalFixedIncome = useMemo(() => {
-    return data.fixedIncome.reduce((sum, inv) => {
-      if (inv.actualBalance !== undefined && inv.actualBalance !== null && inv.actualBalance > 0) {
-        return sum + inv.actualBalance;
-      }
-      const calculation = calculateFixedIncomeYield(
-        inv.value,
-        inv.rate,
-        inv.indexation,
-        inv.applicationDate,
-        new Date(),
-        rates
-      );
-      return sum + calculation.netValue;
-    }, 0);
-  }, [data.fixedIncome, rates]);
+  return data.fixedIncome.reduce((sum, inv) => {
+    const calculation = calculateFixedIncomeYield(
+      inv.value,
+      inv.rate,
+      inv.indexation,
+      inv.applicationDate,
+      new Date(),
+      rates
+    );
+
+    return sum + calculation.netValue;
+  }, 0);
+}, [data.fixedIncome, rates]);
 
   // Calculation of Saldo: Entradas (Receitas) - Saídas (Despesas)
   const calculatedSaldo = useMemo(() => {

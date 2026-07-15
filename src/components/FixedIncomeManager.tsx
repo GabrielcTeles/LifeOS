@@ -35,7 +35,7 @@ export default function FixedIncomeManager({ data, rates, onUpdateData }: FixedI
     return nextYear.toISOString().split('T')[0];
   });
   const [liquidity, setLiquidity] = useState<FixedIncome['liquidity']>('Vencimento');
-  const [actualBalanceInput, setActualBalanceInput] = useState('');
+  
 
   // Inline editing state for portfolio items
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -65,12 +65,11 @@ export default function FixedIncomeManager({ data, rates, onUpdateData }: FixedI
       const realTaxRate = isTaxExempt ? 0 : calculation.taxRate;
       const realTaxAmount = isTaxExempt ? 0 : calculation.taxAmount;
       
-      const hasOverride = inv.actualBalance !== undefined && inv.actualBalance !== null && inv.actualBalance > 0;
-      const realNetValue = hasOverride ? inv.actualBalance! : (
-        isTaxExempt 
-          ? inv.value + calculation.grossInterest 
-          : inv.value + (calculation.grossInterest - calculation.taxAmount)
-      );
+      const hasOverride = false;
+
+const realNetValue = isTaxExempt
+  ? inv.value + calculation.grossInterest
+  : inv.value + calculation.grossInterest - calculation.taxAmount;
 
       const realGrossInterest = hasOverride
         ? Math.max(0, realNetValue - inv.value)
@@ -130,7 +129,7 @@ export default function FixedIncomeManager({ data, rates, onUpdateData }: FixedI
       applicationDate: appDate,
       maturityDate: maturityDate,
       liquidity,
-      actualBalance: actualBalanceInput ? Number(actualBalanceInput) : undefined
+      actualBalance: undefined
     };
 
     onUpdateData(prev => ({
@@ -559,17 +558,7 @@ export default function FixedIncomeManager({ data, rates, onUpdateData }: FixedI
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-400">Saldo Atual (Opcional - Sobrescreve cálculo)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="Ex: 68018.02"
-                  value={actualBalanceInput}
-                  onChange={e => setActualBalanceInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm text-white font-mono focus:outline-hidden focus:border-emerald-500"
-                />
-              </div>
+              
             </div>
 
             <button

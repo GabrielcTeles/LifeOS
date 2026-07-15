@@ -28,79 +28,22 @@ import IPhoneGuide from './components/IPhoneGuide';
 
 const DEFAULT_FALLBACK_DATA: AppData = {
   profile: {
-    name: "Gabriel Telles",
-    email: "gabrielctelless@outlook.com",
-    currency: "BRL" as const,
-    theme: "light" as const,
+    name: "",
+    email: "",
+    currency: "BRL",
+    theme: "light"
   },
-  transactions: [
-    {
-      id: "t-salary",
-      date: "2026-07-01",
-      amount: 75000.0,
-      type: "receita" as const,
-      category: "Salário",
-      subcategory: "Mensal",
-      description: "Salário mensal - Tech Corp",
-      currency: "BRL" as const,
-      tags: ["salario", "mensal"]
-    },
-    {
-      id: "t1",
-      date: "2026-07-01",
-      amount: 120.50,
-      type: "despesa" as const,
-      category: "Alimentação",
-      subcategory: "Restaurante",
-      description: "Jantar - Pizzaria Camelo",
-      currency: "BRL" as const,
-      tags: ["lazer", "fim-de-semana"]
-    }
-  ],
-  investments: [
-    {
-      id: "i1",
-      ticker: "VALE3",
-      name: "Vale S.A. ON",
-      type: "Ações" as const,
-      quantity: 50,
-      purchasePrice: 62.4,
-      purchaseDate: "2026-02-15",
-      sector: "Materiais Básicos",
-      currency: "BRL" as const
-    },
-    {
-      id: "i2",
-      ticker: "PETR4",
-      name: "Petróleo Brasileiro S.A. PN",
-      type: "Ações" as const,
-      quantity: 100,
-      purchasePrice: 35.8,
-      purchaseDate: "2026-03-10",
-      sector: "Petróleo & Gás",
-      currency: "BRL" as const
-    }
-  ],
-  fixedIncome: [
-    {
-      id: "fi1",
-      type: "CDB" as const,
-      value: 15000,
-      rate: 110,
-      applicationDate: "2026-01-02",
-      maturityDate: "2028-01-02",
-      indexation: "CDI" as const,
-      liquidity: "Vencimento" as const
-    }
-  ],
+  transactions: [],
+  investments: [],
+  fixedIncome: [],
   budgets: {
-    "Alimentação": 1200,
-    "Transporte": 400,
-    "Saúde": 300,
-    "Educação": 500,
-    "Lazer": 600,
-    "Utilities": 500,
-    "Outros": 400
+    "Alimentação": 0,
+    "Transporte": 0,
+    "Saúde": 0,
+    "Educação": 0,
+    "Lazer": 0,
+    "Utilities": 0,
+    "Outros": 0
   },
   bankAccounts: []
 };
