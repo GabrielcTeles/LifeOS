@@ -1265,154 +1265,327 @@ app.all(["/api/supabase/proxy", "/supabase/proxy"], async (req, res) => {
 // Receipt OCR Analysis with Gemini AI
 app.post(["/api/transactions/scan", "/transactions/scan"], async (req, res) => {
   let requestData = req.body || {};
+
   if (typeof requestData === "string") {
     try {
       requestData = JSON.parse(requestData);
-    } catch (e) {
-      // ignore
+    } catch {
+      return res.status(400).json({
+        success: false,
+        error: "Corpo da requisição inválido."
+      });
     }
   }
-  const { imageBase64, mimeType, fast } = requestData;
+
+  const { imageBase64, mimeType } = requestData;
 
   if (!imageBase64 || !mimeType) {
-    return res.status(400).json({ error: "Parâmetros 'imageBase64' e 'mimeType' são obrigatórios." });
+    return res.status(400).json({
+      success: false,
+      error: "Parâmetros 'imageBase64' e 'mimeType' são obrigatórios."
+    });
   }
 
-  // Remove data URL prefix if it exists in a highly robust way
-  const rawBase64 = imageBase64.includes(";base64,") ? imageBase64.split(";base64,")[1] : imageBase64;
-
   if (!ai) {
-    // Return high quality simulated OCR if Gemini API key isn't provided or fails to initialize
-    console.log("No Gemini AI instance active. Running mock scanner...");
-    setTimeout(() => {
-      const randomReceiptMock = {
-        establishment: "Supermercados Pão de Açúcar",
-        date: new Date().toISOString().split("T")[0],
-        total: Number((Math.random() * 150 + 50).toFixed(2)),
-        category: "Alimentação",
-        subcategory: "Supermercado",
-        items: ["Arroz Agulhinha 5kg", "Azeite de Oliva Extravirgem", "Leite Integral UHT", "Sabonete Líquido"],
-        confidence: 94,
-        description: "Compra de mantimentos (Lançamento simulado devido à ausência de chave API).",
-        isMock: true
-      };
-      return res.json(randomReceiptMock);
-    }, 1200);
-    return;
+    return res.status(503).json({
+      success: false,
+      error: "GEMINI_API_KEY não configurada ou cliente Gemini não inicializado."
+    });
+  }
+
+  const allowedMimeTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp"
+  ];
+
+  if (!allowedMimeTypes.includes(String(mimeType).toLowerCase())) {
+    return res.status(400).json({
+      success: false,
+      error: `Formato de imagem não suportado: ${mimeType}`
+    });
+  }
+
+  const rawBase64 = String(imageBase64).includes(";base64,")
+    ? String(imageBase64).split(";base64,")[1]
+    : String(imageBase64);
+
+  if (!rawBase64 || rawBase64.length < 100) {
+    return res.status(400).json({
+      success: false,
+      error: "Imagem inválida ou vazia."
+    });
   }
 
   try {
-    const prompt = `Analise a imagem deste recibo ou nota fiscal de compra fornecida e extraia as seguintes informações de forma muito precisa.
-Você deve retornar os dados estritamente em formato JSON estruturado conforme o seguinte esquema/propriedades requeridas:
-1. "establishment" (nome do estabelecimento comercial, com letra maiúscula).
-2. "date" (data da compra no formato YYYY-MM-DD. Se faltar, use a data atual 2026-07-06).
-3. "total" (valor total pago em formato número decimal).
-4. "category" (categoria principal do gasto. Escolha estritamente uma destas: Alimentação, Transporte, Saúde, Educação, Lazer, Utilities, Outros).
-5. "subcategory" (subcategoria específica correspondente, ex: Supermercado, Restaurante, Combustível, Farmácia, Faculdade, etc.).
-6. "items" (uma lista/array de strings de cada produto/item lido na nota).
-7. "confidence" (um número inteiro entre 0 e 100 de confiança na leitura).
-8. "description" (breve resumo descritivo em português).
+    const prompt = `
+Você é um sistema de OCR especializado em notas fiscais, cupons fiscais e recibos brasileiros.
 
-Lembre-se: O retorno deve ser estritamente JSON correspondente a este esquema.`;
+Analise somente as informações realmente visíveis na imagem.
 
-    const imagePart = {
-      inlineData: {
-        mimeType: mimeType,
-        data: rawBase64,
-      },
-    };
+REGRAS OBRIGATÓRIAS:
 
-    const textPart = {
-      text: prompt,
-    };
+1. Não invente nenhuma informação.
+2. Não complete campos por suposição.
+3. Quando uma informação textual não estiver legível, retorne uma string vazia.
+4. Quando o valor total não estiver legível, retorne 0.
+5. Não confunda subtotal, desconto, troco, valor recebido, tributos ou valor de item com o total final.
+6. O campo "total" deve conter somente o valor final efetivamente pago.
+7. Copie o nome do estabelecimento conforme aparece na imagem.
+8. O CNPJ deve conter somente números.
+9. A data deve estar no formato YYYY-MM-DD.
+10. O horário deve estar no formato HH:mm.
+11. Inclua em "items" somente produtos ou serviços realmente legíveis.
+12. Use ponto como separador decimal.
+13. Retorne somente JSON, sem texto antes ou depois.
+14. Se a imagem estiver cortada, desfocada ou ilegível, informe isso em "warnings" e reduza a confiança.
+15. Nunca use dados de exemplos ou respostas anteriores.
 
-    // Dynamically order models: fast mode prioritizes the lighter, ultra-quick gemini-3.1-flash-lite, while standard mode prioritizes the deep gemini-flash-latest.
-    const modelsToTry = fast ? [
-      { name: "gemini-3.1-flash-lite", maxAttempts: 1, delayMs: 0 },
-      { name: "gemini-flash-latest", maxAttempts: 1, delayMs: 0 }
-    ] : [
-      { name: "gemini-flash-latest", maxAttempts: 1, delayMs: 0 },
-      { name: "gemini-3.5-flash", maxAttempts: 1, delayMs: 0 },
-      { name: "gemini-3.1-flash-lite", maxAttempts: 1, delayMs: 0 }
-    ];
-    let resultText = "";
-    let lastError: any = null;
+Campos esperados:
 
-    for (const modelConfig of modelsToTry) {
-      console.log(`Attempting receipt scanning with model '${modelConfig.name}'...`);
-      for (let attempt = 1; attempt <= modelConfig.maxAttempts; attempt++) {
-        try {
-          const response = await ai.models.generateContent({
-            model: modelConfig.name,
-            contents: { parts: [imagePart, textPart] },
-            config: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  establishment: { type: Type.STRING, description: "Nome do estabelecimento ou comerciante." },
-                  date: { type: Type.STRING, description: "Data da compra no formato YYYY-MM-DD." },
-                  total: { type: Type.NUMBER, description: "Valor total do recibo." },
-                  category: { type: Type.STRING, description: "Categoria sugerida: Alimentação, Transporte, Saúde, Educação, Lazer, Utilities ou Outros." },
-                  subcategory: { type: Type.STRING, description: "Subcategoria sugerida." },
-                  items: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                    description: "Array com os itens identificados."
-                  },
-                  confidence: { type: Type.INTEGER, description: "Nível de confiança da classificação (0-100)." },
-                  description: { type: Type.STRING, description: "Resumo explicativo sobre a nota fiscal." }
-                },
-                required: ["establishment", "date", "total", "category", "subcategory", "confidence", "description"]
-              }
+- establishment
+- cnpj
+- date
+- time
+- total
+- paymentMethod
+- category
+- subcategory
+- items
+- confidence
+- description
+- warnings
+
+A categoria deve ser uma destas:
+Alimentação, Transporte, Saúde, Educação, Lazer, Utilities ou Outros.
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              mimeType: String(mimeType).toLowerCase(),
+              data: rawBase64
             }
-          });
-
-          if (response && response.text) {
-            resultText = response.text;
-            console.log(`Successfully completed scan with model '${modelConfig.name}' on attempt ${attempt}`);
-            break;
-          } else {
-            throw new Error(`Empty response returned from model ${modelConfig.name}`);
+          },
+          {
+            text: prompt
           }
-        } catch (err: any) {
-          lastError = err;
-          console.warn(`Model ${modelConfig.name} failed on attempt ${attempt}:`, err.message || err);
-          if (attempt < modelConfig.maxAttempts && modelConfig.delayMs > 0) {
-            console.log(`Waiting ${modelConfig.delayMs}ms before retrying ${modelConfig.name}...`);
-            await new Promise(resolve => setTimeout(resolve, modelConfig.delayMs));
-          }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            establishment: {
+              type: Type.STRING,
+              description: "Nome do estabelecimento exatamente como visível."
+            },
+            cnpj: {
+              type: Type.STRING,
+              description: "CNPJ somente com números ou string vazia."
+            },
+            date: {
+              type: Type.STRING,
+              description: "Data no formato YYYY-MM-DD ou string vazia."
+            },
+            time: {
+              type: Type.STRING,
+              description: "Horário no formato HH:mm ou string vazia."
+            },
+            total: {
+              type: Type.NUMBER,
+              description: "Valor total final pago ou 0."
+            },
+            paymentMethod: {
+              type: Type.STRING,
+              description: "Forma de pagamento ou string vazia."
+            },
+            category: {
+              type: Type.STRING,
+              enum: [
+                "Alimentação",
+                "Transporte",
+                "Saúde",
+                "Educação",
+                "Lazer",
+                "Utilities",
+                "Outros"
+              ]
+            },
+            subcategory: {
+              type: Type.STRING,
+              description: "Subcategoria ou string vazia."
+            },
+            items: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.STRING
+              },
+              description: "Lista somente com itens legíveis."
+            },
+            confidence: {
+              type: Type.INTEGER,
+              description: "Confiança geral entre 0 e 100."
+            },
+            description: {
+              type: Type.STRING,
+              description: "Resumo curto baseado somente na imagem."
+            },
+            warnings: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.STRING
+              },
+              description: "Problemas encontrados na leitura."
+            }
+          },
+          required: [
+            "establishment",
+            "cnpj",
+            "date",
+            "time",
+            "total",
+            "paymentMethod",
+            "category",
+            "subcategory",
+            "items",
+            "confidence",
+            "description",
+            "warnings"
+          ]
         }
       }
-      if (resultText) {
-        break; // Successfully scanned, stop trying other models
-      }
+    });
+
+    if (!response?.text) {
+      throw new Error("O Gemini não retornou conteúdo.");
     }
 
-    if (!resultText) {
-      throw lastError || new Error("All recommended Gemini models and retries failed to scan this receipt.");
-    }
+    const cleanedResult = response.text
+      .trim()
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "");
 
-    console.log("Gemini AI OCR Response:", resultText);
-    const parsedData = JSON.parse(resultText.trim());
-    res.json(parsedData);
+    const parsedData = JSON.parse(cleanedResult);
+
+    const allowedCategories = [
+      "Alimentação",
+      "Transporte",
+      "Saúde",
+      "Educação",
+      "Lazer",
+      "Utilities",
+      "Outros"
+    ];
+
+    const cnpjDigits = String(parsedData.cnpj || "").replace(/\D/g, "");
+    const totalNumber = Number(parsedData.total);
+    const confidenceNumber = Number(parsedData.confidence);
+
+    const validatedData = {
+      establishment:
+        typeof parsedData.establishment === "string"
+          ? parsedData.establishment.trim()
+          : "",
+
+      cnpj:
+        cnpjDigits.length === 14
+          ? cnpjDigits
+          : "",
+
+      date:
+        typeof parsedData.date === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(parsedData.date)
+          ? parsedData.date
+          : "",
+
+      time:
+        typeof parsedData.time === "string" &&
+        /^\d{2}:\d{2}$/.test(parsedData.time)
+          ? parsedData.time
+          : "",
+
+      total:
+        Number.isFinite(totalNumber) && totalNumber > 0
+          ? Number(totalNumber.toFixed(2))
+          : 0,
+
+      paymentMethod:
+        typeof parsedData.paymentMethod === "string"
+          ? parsedData.paymentMethod.trim()
+          : "",
+
+      category:
+        allowedCategories.includes(parsedData.category)
+          ? parsedData.category
+          : "Outros",
+
+      subcategory:
+        typeof parsedData.subcategory === "string"
+          ? parsedData.subcategory.trim()
+          : "",
+
+      items:
+        Array.isArray(parsedData.items)
+          ? parsedData.items
+              .filter((item: unknown) => typeof item === "string")
+              .map((item: string) => item.trim())
+              .filter(Boolean)
+          : [],
+
+      confidence:
+        Number.isFinite(confidenceNumber)
+          ? Math.max(0, Math.min(100, Math.round(confidenceNumber)))
+          : 0,
+
+      description:
+        typeof parsedData.description === "string"
+          ? parsedData.description.trim()
+          : "",
+
+      warnings:
+        Array.isArray(parsedData.warnings)
+          ? parsedData.warnings
+              .filter((warning: unknown) => typeof warning === "string")
+              .map((warning: string) => warning.trim())
+              .filter(Boolean)
+          : []
+    };
+
+    console.log(
+      "Resultado validado do OCR:",
+      JSON.stringify(validatedData, null, 2)
+    );
+
+    return res.json(validatedData);
   } catch (err: any) {
-    console.error("Gemini AI OCR Scan failed:", err);
-    // Instead of failing with 500 which completely breaks user workflow, return a graceful 200 OK fallback mock
-    // with isFallback: true so the user is informed but can still edit and save the expense.
-    res.json({
-      establishment: "Restaurante e Lanchonete Grill",
-      date: new Date().toISOString().split("T")[0],
-      total: 82.40,
-      category: "Alimentação",
-      subcategory: "Restaurante",
-      items: ["Prato Executivo Filé", "Refrigerante Lata", "Sobremesa Pudim"],
-      confidence: 85,
-      description: "Lançamento simulado (Ocorreu um erro ao conectar ao serviço Gemini AI).",
-      isFallback: true,
-      errorDetails: err.message
+    console.error("Gemini AI OCR Scan failed:", {
+      message: err?.message,
+      status: err?.status,
+      code: err?.code,
+      stack: err?.stack
+    });
+
+    const status =
+      typeof err?.status === "number" &&
+      err.status >= 400 &&
+      err.status <= 599
+        ? err.status
+        : 502;
+
+    return res.status(status).json({
+      success: false,
+      error: "Falha ao processar a imagem com o Gemini.",
+      details: err?.message || String(err),
+      status,
+      code: err?.code || "GEMINI_OCR_ERROR"
     });
   }
 });
-
 export default app;
