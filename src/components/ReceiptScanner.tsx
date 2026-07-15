@@ -226,16 +226,35 @@ export default function ReceiptScanner({ onAddScannedTransaction }: ReceiptScann
   }
 };
 const handleConfirmScan = () => {
-  if (!establishment || !amount || Number(amount) <= 0) {
+  const normalizedAmount = String(amount)
+    .trim()
+    .replace(/^R\$\s?/, '')
+    .replace(/\s/g, '');
+
+  const parsedAmount = Number(
+    normalizedAmount.includes(',')
+      ? normalizedAmount.replace(/\./g, '').replace(',', '.')
+      : normalizedAmount
+  );
+
+  if (!establishment.trim()) {
+    setError("Informe o nome do estabelecimento antes de confirmar.");
     return;
   }
 
+  if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+    setError("Informe um valor válido e maior que zero antes de confirmar.");
+    return;
+  }
+
+  setError(null);
+
   onAddScannedTransaction({
-    description: establishment,
-    amount: Number(amount),
-    category,
-    subcategory,
-    date,
+    description: establishment.trim(),
+    amount: parsedAmount,
+    category: category || 'Outros',
+    subcategory: subcategory || 'Outros',
+    date: date || new Date().toISOString().split('T')[0],
     type: 'despesa',
     tags: [
       'IA-Scan',
@@ -247,10 +266,17 @@ const handleConfirmScan = () => {
     items
   });
 
-  setSuccessMsg("Lançamento via IA adicionado com sucesso!");
+  setSuccessMsg("Lançamento adicionado com sucesso!");
   setFile(null);
   setPreviewUrl(null);
   setScanResult(null);
+  setEstablishment('');
+  setAmount('');
+  setCategory('');
+  setSubcategory('');
+  setDate('');
+  setItems([]);
+  setDescription('');
 
   setTimeout(() => {
     setSuccessMsg(null);
