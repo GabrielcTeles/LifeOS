@@ -160,263 +160,274 @@ function writeUserDb(email: string, userData: any) {
 }
 
 // Simulated real-time quotes with slight fluctuations (random walk)
-const defaultBaseQuotes = [
-  // Ações Brasileiras (B3)
-  { ticker: "VALE3", price: 57.80, change24h: -0.8, name: "Vale S.A. ON", sector: "Materiais Básicos" },
-  { ticker: "PETR4", price: 38.60, change24h: 1.2, name: "Petróleo Brasileiro S.A. PN", sector: "Petróleo & Gás" },
-  { ticker: "WEGE3", price: 51.50, change24h: 0.6, name: "WEG S.A. ON", sector: "Bens Industriais" },
-  { ticker: "ITUB4", price: 33.20, change24h: 0.4, name: "Itaú Unibanco S.A. PN", sector: "Financeiro" },
-  { ticker: "BBDC4", price: 13.50, change24h: -0.2, name: "Banco Bradesco S.A. PN", sector: "Financeiro" },
-  { ticker: "BBAS3", price: 27.40, change24h: 0.9, name: "Banco do Brasil S.A. ON", sector: "Financeiro" },
-  { ticker: "ITSA4", price: 9.80, change24h: 0.1, name: "Itaúsa S.A. PN", sector: "Financeiro" },
-  { ticker: "ABEV3", price: 11.90, change24h: -0.5, name: "Ambev S.A. ON", sector: "Consumo Não Cíclico" },
-  { ticker: "MGLU3", price: 12.40, change24h: -2.1, name: "Magazine Luiza S.A. ON", sector: "Consumo Cíclico" },
-  { ticker: "BHIA3", price: 6.20, change24h: -1.8, name: "Casas Bahia S.A. ON", sector: "Consumo Cíclico" },
-  { ticker: "LREN3", price: 16.30, change24h: 0.3, name: "Lojas Renner S.A. ON", sector: "Consumo Cíclico" },
-  { ticker: "ELET3", price: 38.50, change24h: 0.7, name: "Eletrobras S.A. ON", sector: "Utilidade Pública" },
-  { ticker: "GGBR4", price: 18.20, change24h: -0.3, name: "Gerdau S.A. PN", sector: "Materiais Básicos" },
-  { ticker: "USIM5", price: 6.80, change24h: -0.9, name: "Usiminas S.A. PNA", sector: "Materiais Básicos" },
-  { ticker: "CSNA3", price: 11.20, change24h: 1.1, name: "Siderúrgica Nacional S.A. ON", sector: "Materiais Básicos" },
-  { ticker: "PRIO3", price: 44.50, change24h: 2.3, name: "PetroRio S.A. ON", sector: "Petróleo & Gás" },
-  { ticker: "RENT3", price: 42.10, change24h: -0.4, name: "Localiza S.A. ON", sector: "Consumo Cíclico" },
-  { ticker: "EQTL3", price: 31.80, change24h: 0.2, name: "Equatorial S.A. ON", sector: "Utilidade Pública" },
-  { ticker: "RADL3", price: 25.45, change24h: 0.5, name: "Raia Drogasil S.A. ON", sector: "Saúde" },
-  { ticker: "CPLE6", price: 9.40, change24h: 0.3, name: "Copel S.A. PNB", sector: "Utilidade Pública" },
-  { ticker: "SANB11", price: 28.10, change24h: -0.1, name: "Banco Santander Brasil Unit", sector: "Financeiro" },
-  { ticker: "BBSE3", price: 33.40, change24h: 0.8, name: "BB Seguridade S.A. ON", sector: "Financeiro" },
-  { ticker: "CXSE3", price: 14.80, change24h: 1.2, name: "Caixa Seguridade S.A. ON", sector: "Financeiro" },
-  { ticker: "TAEE11", price: 34.20, change24h: -0.2, name: "Taesa S.A. Unit", sector: "Utilidade Pública" },
-  { ticker: "TRPL4", price: 24.60, change24h: 0.1, name: "ISA CTEEP S.A. PN", sector: "Utilidade Pública" },
-  { ticker: "EGIE3", price: 41.30, change24h: 0.4, name: "Engie Brasil S.A. ON", sector: "Utilidade Pública" },
-  { ticker: "EMBR3", price: 39.50, change24h: 3.1, name: "Embraer S.A. ON", sector: "Bens Industriais" },
-  { ticker: "COGN3", price: 1.95, change24h: -1.2, name: "Cogna Educação S.A. ON", sector: "Consumo Cíclico" },
-  { ticker: "AZUL4", price: 9.20, change24h: -1.5, name: "Azul S.A. PN", sector: "Consumo Cíclico" },
-  { ticker: "B3SA3", price: 10.15, change24h: -0.3, name: "B3 S.A. ON", sector: "Financeiro" },
-  { ticker: "KLBN11", price: 20.40, change24h: 0.2, name: "Klabin S.A. Unit", sector: "Materiais Básicos" },
-  { ticker: "SUZB3", price: 49.80, change24h: -0.6, name: "Suzano S.A. ON", sector: "Materiais Básicos" },
-  { ticker: "HYPE3", price: 28.30, change24h: -0.4, name: "Hypera S.A. ON", sector: "Saúde" },
-  { ticker: "NTCO3", price: 14.20, change24h: 0.5, name: "Natura &Co ON", sector: "Consumo Não Cíclico" },
-  { ticker: "JBSS3", price: 31.50, change24h: 1.4, name: "JBS S.A. ON", sector: "Consumo Não Cíclico" },
-  { ticker: "BRFS3", price: 22.10, change24h: 1.1, name: "BRF S.A. ON", sector: "Consumo Não Cíclico" },
-  { ticker: "CRFB3", price: 10.40, change24h: -0.2, name: "Carrefour Brasil ON", sector: "Consumo Não Cíclico" },
-  { ticker: "ASSAI3", price: 11.15, change24h: 0.2, name: "Assaí S.A. ON", sector: "Consumo Não Cíclico" },
-  { ticker: "VIVT3", price: 51.20, change24h: 0.3, name: "Telefônica Brasil S.A. ON", sector: "Utilidade Pública" },
-  { ticker: "TIMS3", price: 16.80, change24h: 0.6, name: "TIM S.A. ON", sector: "Utilidade Pública" },
-  { ticker: "FLRY3", price: 15.30, change24h: -0.1, name: "Fleury S.A. ON", sector: "Saúde" },
-  { ticker: "SBSP3", price: 82.50, change24h: 1.4, name: "Sabesp S.A. ON", sector: "Utilidade Pública" },
+type UserInvestment = {
+  ticker: string;
+  name?: string;
+  type: 'Ações' | 'ETFs' | 'Cripto';
+  currency: 'BRL' | 'USD' | 'EUR';
+  sector?: string;
+};
 
-  // ETFs (B3)
-  { ticker: "BOVA11", price: 120.40, change24h: 0.4, name: "iShares Ibovespa ETF", sector: "ETFs" },
-  { ticker: "SMAL11", price: 98.50, change24h: -0.3, name: "iShares Small Cap ETF", sector: "ETFs" },
-  { ticker: "IVVB11", price: 295.20, change24h: 1.1, name: "iShares S&P 500 BRL ETF", sector: "ETFs" },
-  { ticker: "HASH11", price: 45.30, change24h: 2.1, name: "Hashdex Nasdaq Crypto ETF", sector: "ETFs" },
+type CachedQuote = {
+  price: number;
+  change24h: number;
+  updatedAt: number;
+};
 
-  // Ações Internacionais (US)
-  { ticker: "AAPL", price: 220.50, change24h: 1.5, name: "Apple Inc.", sector: "Tecnologia" },
-  { ticker: "MSFT", price: 445.60, change24h: 0.8, name: "Microsoft Corporation", sector: "Tecnologia" },
-  { ticker: "TSLA", price: 198.90, change24h: -1.4, name: "Tesla Inc.", sector: "Automotivo" },
-  { ticker: "GOOGL", price: 175.40, change24h: 0.9, name: "Alphabet Inc.", sector: "Tecnologia" },
-  { ticker: "AMZN", price: 189.20, change24h: 1.2, name: "Amazon.com Inc.", sector: "Tecnologia" },
-  { ticker: "NVDA", price: 125.80, change24h: 2.8, name: "NVIDIA Corporation", sector: "Tecnologia" },
-  { ticker: "META", price: 498.30, change24h: 0.4, name: "Meta Platforms Inc.", sector: "Tecnologia" },
-  { ticker: "NFLX", price: 650.40, change24h: 1.0, name: "Netflix Inc.", sector: "Tecnologia" },
-  { ticker: "JPM", price: 195.50, change24h: -0.2, name: "JPMorgan Chase & Co.", sector: "Financeiro" },
-  { ticker: "V", price: 272.10, change24h: 0.3, name: "Visa Inc.", sector: "Financeiro" },
-  { ticker: "KO", price: 62.40, change24h: -0.1, name: "The Coca-Cola Company", sector: "Consumo Não Cíclico" },
-  { ticker: "DIS", price: 101.50, change24h: -0.5, name: "The Walt Disney Company", sector: "Consumo Cíclico" },
+const quoteCache = new Map<string, CachedQuote>();
+const QUOTE_CACHE_TTL = 60 * 1000;
 
-  // Criptomoedas
-  { ticker: "BTC", price: 385000.00, change24h: 2.3, name: "Bitcoin", sector: "Criptomoedas" },
-  { ticker: "ETH", price: 19200.00, change24h: 1.7, name: "Ethereum", sector: "Criptomoedas" },
-  { ticker: "SOL", price: 800.00, change24h: 4.5, name: "Solana", sector: "Criptomoedas" },
-  { ticker: "ADA", price: 2.10, change24h: -0.8, name: "Cardano", sector: "Criptomoedas" },
-  { ticker: "XRP", price: 2.65, change24h: 1.1, name: "Ripple", sector: "Criptomoedas" },
-  { ticker: "DOT", price: 32.00, change24h: -1.2, name: "Polkadot", sector: "Criptomoedas" },
-  { ticker: "DOGE", price: 0.66, change24h: 5.4, name: "Dogecoin", sector: "Criptomoedas" },
-];
+function getYahooSymbol(investment: UserInvestment): string {
+  const ticker = investment.ticker
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, '');
 
-// Helper to keep simulated prices fluctuating in server memory
-const livePricesMap = new Map<string, { price: number; change24h: number }>();
-let lastFetchTime = 0;
-const CACHE_TTL = 3 * 60 * 1000; // Cache for 3 minutes
-
-function toYahooSymbol(ticker: string): string {
-  const t = ticker.toUpperCase().trim();
-  if (t.endsWith(".SA") || t.includes("-") || t.includes("=")) return t;
-  if (t === "BTC") return "BTC-USD";
-  if (t === "ETH") return "ETH-USD";
-  if (t === "SOL") return "SOL-USD";
-  if (t === "ADA") return "ADA-USD";
-  if (t === "XRP") return "XRP-USD";
-  if (t === "DOT") return "DOT-USD";
-  if (t === "DOGE") return "DOGE-USD";
-  
-  // US Stocks
-  const usStocks = ["AAPL", "MSFT", "TSLA", "GOOGL", "AMZN", "NVDA", "META", "NFLX", "JPM", "V", "KO", "DIS"];
-  if (usStocks.includes(t)) {
-    return t;
+  if (!ticker) {
+    throw new Error("Ticker não informado.");
   }
-  
-  if (/\d+$/.test(t)) {
-    return t + ".SA";
+
+  // Permite ticker completo informado pelo usuário
+  if (
+    ticker.endsWith(".SA") ||
+    ticker.endsWith(".L") ||
+    ticker.endsWith(".TO") ||
+    ticker.endsWith(".F") ||
+    ticker.includes("-") ||
+    ticker.includes("=")
+  ) {
+    return ticker;
   }
-  return t;
+
+  // Criptomoedas cotadas em dólar
+  if (investment.type === "Cripto") {
+    return `${ticker}-USD`;
+  }
+
+  // Ativos brasileiros: ações, FIIs, ETFs, BDRs e Units
+  if (investment.currency === "BRL") {
+    return `${ticker}.SA`;
+  }
+
+  // Ações americanas
+  return ticker;
 }
 
-async function fetchLiveQuotes() {
-  const now = Date.now();
-  if (now - lastFetchTime < CACHE_TTL && livePricesMap.size > 0) {
-    return;
+async function fetchUsdBrl(): Promise<number> {
+  const response = await fetch(
+    "https://query2.finance.yahoo.com/v8/finance/chart/USDBRL=X?interval=1d&range=1d",
+    {
+      headers: {
+        "User-Agent": "Mozilla/5.0"
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Falha ao consultar dólar: HTTP ${response.status}`);
   }
-  
+
+  const json: any = await response.json();
+  const price = json?.chart?.result?.[0]?.meta?.regularMarketPrice;
+
+  if (!Number.isFinite(price)) {
+    throw new Error("Cotação do dólar indisponível.");
+  }
+
+  return Number(price);
+}
+
+async function fetchInvestmentQuote(
+  investment: UserInvestment,
+  usdBrl: number
+) {
+  const ticker = investment.ticker.toUpperCase().trim();
+  const yahooSymbol = getYahooSymbol(investment);
+  const cacheKey = `${yahooSymbol}:${investment.currency}`;
+
+  const cached = quoteCache.get(cacheKey);
+
+  if (
+    cached &&
+    Date.now() - cached.updatedAt < QUOTE_CACHE_TTL
+  ) {
+    return {
+      ticker,
+      price: cached.price,
+      change24h: cached.change24h,
+      name: investment.name || ticker,
+      sector: investment.sector || "Outros",
+      updatedAt: new Date(cached.updatedAt).toISOString(),
+      isLive: true
+    };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
   try {
-    const db = readDb();
-    const userInvestments = db.investments || [];
-    
-    // Collect tickers to fetch: user custom ones plus top popular assets
-    const tickersSet = new Set<string>();
-    
-    // 1. All user held tickers
-    userInvestments.forEach((inv: any) => {
-      if (inv.ticker) {
-        tickersSet.add(inv.ticker.toUpperCase().trim());
+    const url =
+      `https://query2.finance.yahoo.com/v8/finance/chart/` +
+      `${encodeURIComponent(yahooSymbol)}?interval=1d&range=5d`;
+
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0"
       }
     });
-    
-    // 2. Top popular tickers for default market list
-    const popularTickers = ["VALE3", "PETR4", "WEGE3", "ITUB4", "BBAS3", "B3SA3", "BOVA11", "BTC", "ETH", "AAPL", "MSFT", "TSLA"];
-    popularTickers.forEach(t => tickersSet.add(t));
-    
-    const tickersList = Array.from(tickersSet);
-    
-    // First, fetch the USD/BRL exchange rate
-    let usdRate = 5.10;
-    try {
-      const usdRes = await fetch("https://query2.finance.yahoo.com/v8/finance/chart/USDBRL=X?interval=1d&range=1d", {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
-      });
-      if (usdRes.ok) {
-        const usdJson: any = await usdRes.json();
-        const rate = usdJson?.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (rate) usdRate = rate;
-      }
-    } catch (e) {
-      console.error("Failed to fetch USD/BRL rate, using fallback 5.10", e);
+
+    if (!response.ok) {
+      throw new Error(
+        `Ativo ${ticker} não encontrado: HTTP ${response.status}`
+      );
     }
-    
-    // Fetch in parallel with 2s timeout per request
-    await Promise.all(
-      tickersList.map(async (ticker) => {
-        const yahooSymbol = toYahooSymbol(ticker);
-        const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1d&range=1d`;
-        
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 2000);
-          
-          const response = await fetch(url, {
-            signal: controller.signal,
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            }
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if (response.ok) {
-            const json: any = await response.json();
-            const meta = json?.chart?.result?.[0]?.meta;
-            if (meta) {
-              let price = meta.regularMarketPrice;
-              const prevClose = meta.chartPreviousClose;
-              
-              if (price !== undefined && price !== null) {
-                // Convert crypto fetched in USD to BRL
-                if (meta.symbol.endsWith("-USD")) {
-                  if (ticker === "BTC" || ticker === "ETH" || ticker === "SOL" || ticker === "ADA" || ticker === "XRP" || ticker === "DOT" || ticker === "DOGE") {
-                    price = price * usdRate;
-                  }
-                }
-                
-                let change24h = meta.regularMarketChangePercent;
-                if (change24h === undefined || change24h === null) {
-                  change24h = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
-                }
-                
-                livePricesMap.set(ticker, {
-                  price: Number(price.toFixed(2)),
-                  change24h: Number(change24h.toFixed(2))
-                });
-              }
-            }
-          }
-        } catch (err: any) {
-          console.error(`Error fetching ticker ${ticker} (${yahooSymbol}):`, err.message || err);
-        }
-      })
+
+    const json: any = await response.json();
+    const result = json?.chart?.result?.[0];
+    const apiError = json?.chart?.error;
+
+    if (apiError || !result?.meta) {
+      throw new Error(
+        apiError?.description || `Cotação de ${ticker} indisponível`
+      );
+    }
+
+    const meta = result.meta;
+    let price = Number(meta.regularMarketPrice);
+    const previousClose = Number(
+      meta.chartPreviousClose || meta.previousClose
     );
-    
-    lastFetchTime = now;
-    console.log("Successfully fetched live quotes from query2.finance.yahoo.com.");
-  } catch (error) {
-    console.error("Error fetching live quotes:", error);
+
+    if (!Number.isFinite(price) || price <= 0) {
+      throw new Error(`Preço inválido para ${ticker}`);
+    }
+
+    // Criptomoeda vem em USD; converte para BRL quando necessário
+    if (
+      investment.type === "Cripto" &&
+      investment.currency === "BRL"
+    ) {
+      price *= usdBrl;
+    }
+
+    let change24h = Number(meta.regularMarketChangePercent);
+
+    if (
+      !Number.isFinite(change24h) &&
+      Number.isFinite(previousClose) &&
+      previousClose > 0
+    ) {
+      change24h = ((Number(meta.regularMarketPrice) - previousClose)
+        / previousClose) * 100;
+    }
+
+    if (!Number.isFinite(change24h)) {
+      change24h = 0;
+    }
+
+    const updatedAt = Date.now();
+    const normalizedPrice = Number(price.toFixed(2));
+    const normalizedChange = Number(change24h.toFixed(2));
+
+    quoteCache.set(cacheKey, {
+      price: normalizedPrice,
+      change24h: normalizedChange,
+      updatedAt
+    });
+
+    return {
+      ticker,
+      price: normalizedPrice,
+      change24h: normalizedChange,
+      name: meta.longName || meta.shortName || investment.name || ticker,
+      sector: investment.sector || "Outros",
+      updatedAt: new Date(updatedAt).toISOString(),
+      isLive: true
+    };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
-app.get(["/api/market/quotes", "/market/quotes"], async (req, res) => {
-  if (livePricesMap.size === 0) {
-    await fetchLiveQuotes();
-  } else {
-    fetchLiveQuotes().catch(err => console.error("Async quote update failed:", err));
-  }
+app.get(
+  ["/api/market/quotes", "/market/quotes"],
+  async (req, res) => {
+    const email = String(req.headers["x-user-email"] || "")
+      .trim()
+      .toLowerCase();
 
-  const db = readDb();
-  const userInvestments = db.investments || [];
-
-  // Clone base list and merge user custom assets dynamically
-  const mergedQuotes = [...defaultBaseQuotes];
-
-  userInvestments.forEach((inv: any) => {
-    const tickerUpper = inv.ticker.toUpperCase().trim();
-    if (!mergedQuotes.some(q => q.ticker === tickerUpper)) {
-      mergedQuotes.push({
-        ticker: tickerUpper,
-        price: inv.purchasePrice || 50.0,
-        change24h: 0.0,
-        name: inv.name || tickerUpper,
-        sector: inv.sector || "Outros"
+    if (!email) {
+      return res.status(400).json({
+        error: "Cabeçalho x-user-email não informado."
       });
     }
-  });
 
-  const currentQuotes = mergedQuotes.map(q => {
-    const key = q.ticker;
-    const currentData = livePricesMap.get(key);
+    const db = readDb();
+    const user = db.users?.[email];
 
-    if (currentData) {
-      return {
-        ...q,
-        price: currentData.price,
-        change24h: currentData.change24h
-      };
+    if (!user) {
+      return res.status(404).json({
+        error: "Usuário não encontrado."
+      });
     }
 
-    // Fallback: apply random walk on base price
-    const fluctuation = 1 + (Math.random() * 0.006 - 0.003);
-    const newPrice = Number((q.price * fluctuation).toFixed(2));
-    const randomChange = Number((q.change24h + (Math.random() * 0.2 - 0.1)).toFixed(2));
+    const investments: UserInvestment[] =
+      user.data?.investments || [];
 
-    return {
-      ...q,
-      price: newPrice,
-      change24h: randomChange
-    };
-  });
+    if (investments.length === 0) {
+      return res.json([]);
+    }
 
-  res.json(currentQuotes);
-});
+    let usdBrl = 1;
+
+    try {
+      usdBrl = await fetchUsdBrl();
+    } catch (error) {
+      console.error("Erro ao consultar USD/BRL:", error);
+    }
+
+    const uniqueInvestments = Array.from(
+      new Map(
+        investments.map(investment => [
+          `${investment.ticker}:${investment.currency}`,
+          investment
+        ])
+      ).values()
+    );
+
+    const results = await Promise.allSettled(
+      uniqueInvestments.map(investment =>
+        fetchInvestmentQuote(investment, usdBrl)
+      )
+    );
+
+    const quotes = results
+      .filter(
+        (result): result is PromiseFulfilledResult<any> =>
+          result.status === "fulfilled"
+      )
+      .map(result => result.value);
+
+    const errors = results
+      .filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === "rejected"
+      )
+      .map(result =>
+        result.reason instanceof Error
+          ? result.reason.message
+          : String(result.reason)
+      );
+
+    return res.json({
+      quotes,
+      errors,
+      usdBrl,
+      updatedAt: new Date().toISOString()
+    });
+  }
+);
 
 // Cache and live update logic for Banco Central do Brasil rates
 let cachedRates = {

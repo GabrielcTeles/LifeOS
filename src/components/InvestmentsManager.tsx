@@ -67,11 +67,14 @@ export default function InvestmentsManager({ data, quotes, onUpdateData, onRefre
 
   // Auto-refresh quotes every 6 seconds to show active real-time data
   useEffect(() => {
-    const timer = setInterval(() => {
-      onRefreshQuotes();
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [onRefreshQuotes]);
+  onRefreshQuotes();
+
+  const timer = setInterval(() => {
+    onRefreshQuotes();
+  }, 60_000);
+
+  return () => clearInterval(timer);
+}, [onRefreshQuotes]);
 
   // Handle triggered alerts dynamically
   const activeAlertNotifications = useMemo(() => {

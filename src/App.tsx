@@ -294,14 +294,35 @@ export default function App() {
 
   // Fluctuates market quotes dynamically on demand
   const handleRefreshQuotes = async () => {
-    try {
-      const quotesRes = await fetch("/api/market/quotes");
-      const quotesJson = await quotesRes.json();
-      setQuotes(quotesJson);
-    } catch (e) {
-      console.error("Error refreshing quotes:", e);
+  if (!currentUser) {
+    return;
+  }
+
+  try {
+    const quotesRes = await fetch("/api/market/quotes", {
+      headers: {
+        "x-user-email": currentUser.email
+      }
+    });
+
+    if (!quotesRes.ok) {
+      throw new Error(`Erro HTTP ${quotesRes.status}`);
     }
-  };
+
+    const result = await quotesRes.json();
+
+    setQuotes(result.quotes || []);
+
+    if (result.errors?.length) {
+      console.warn(
+        "Alguns ativos não tiveram cotação encontrada:",
+        result.errors
+      );
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar cotações:", error);
+  }
+};
 
   // Registers transaction scanned from AI Receipt Scan
   const handleAddScannedTransaction = (scannedTx: Partial<Transaction>) => {
