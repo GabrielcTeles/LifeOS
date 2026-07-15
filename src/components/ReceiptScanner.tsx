@@ -174,11 +174,15 @@ export default function ReceiptScanner({ onAddScannedTransaction }: ReceiptScann
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`Erro na API de OCR: ${response.statusText}`);
-      }
-
       const result = await response.json();
+
+if (!response.ok) {
+    throw new Error(
+        result.details ||
+        result.error ||
+        `Erro HTTP ${response.status}`
+    );
+}
       setScanResult(result);
 
       // Populate edit states from Gemini output
@@ -191,19 +195,17 @@ export default function ReceiptScanner({ onAddScannedTransaction }: ReceiptScann
       setDescription(result.description || '');
 
     } catch (err: any) {
-      console.warn("Gemini Cloud scan failed or timed out:", err);
-      // Fallback forward immediately so the user is never blocked
-      const fallbackResult = {
-        establishment: "Restaurante e Lanchonete Grill",
-        total: 82.40,
-        category: "Alimentação",
-        subcategory: "Restaurante",
-        items: ["Prato Executivo Filé", "Refrigerante Lata", "Sobremesa Pudim"],
-        date: new Date().toISOString().split("T")[0],
-        confidence: 85,
-        description: "Lançamento via contingência local (Serviço Gemini instável ou indisponível).",
-        isFallback: true,
-        errorDetails: err.name === 'AbortError' ? "Tempo limite esgotado (35s)" : err.message
+  console.error("Erro ao escanear nota:", err);
+
+  const message =
+    err.name === "AbortError"
+      ? "O processamento demorou mais que o limite permitido."
+      : err.message || "Não foi possível processar a nota.";
+
+  setScanResult(null);
+
+  setError(message);
+}
       };
       
       setScanResult(fallbackResult);
