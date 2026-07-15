@@ -9,7 +9,7 @@ import {
   AlertCircle,
   RefreshCw
 } from 'lucide-react';
-import { AppData, Transaction } from '../types';
+import { Transaction } from '../types';
 import { formatCurrency } from '../utils';
 
 interface ReceiptScannerProps {
@@ -128,128 +128,134 @@ export default function ReceiptScanner({ onAddScannedTransaction }: ReceiptScann
   };
 
   // Sends image to backend Gemini OCR endpoint
-  const handleScanReceipt = async () => {
-    if (!file) return;
+ const handleScanReceipt = async () => {
+  if (!file) return;
 
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
 
-    const isFast = scanMode === 'instant';
-    setLoadingStep(isFast 
-      ? "Preparando imagem para escaneamento super rápido..." 
+  const isFast = scanMode === 'instant';
+
+  setLoadingStep(
+    isFast
+      ? "Preparando imagem para escaneamento super rápido..."
       : "Otimizando e compactando imagem para leitura profunda..."
+  );
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    const {
+      base64: base64Data,
+      mimeType: processedMimeType
+    } = await compressAndResizeImage(file);
+
+    if (!base64Data) {
+      throw new Error("Falha ao ler o arquivo de imagem.");
+    }
+
+    setLoadingStep(
+      isFast
+        ? "Enviando para o scanner ultrarrápido (Lite)..."
+        : "Processando com modelo avançado de inteligência..."
     );
 
-    try {
-      // Compress and resize image client-side
-      const { base64: base64Data, mimeType: processedMimeType } = await compressAndResizeImage(file);
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-      if (!base64Data) {
-        throw new Error("Falha ao ler o arquivo de imagem.");
-      }
+    setLoadingStep(
+      "Extraindo estabelecimento, valores, data e produtos..."
+    );
 
-      setLoadingStep(isFast 
-        ? "Enviando para o scanner ultrarrápido (Lite)..." 
-        : "Processando com modelo avançado de inteligência..."
-      );
-      await new Promise(r => setTimeout(r, 300));
-      setLoadingStep("Extraindo estabelecimento, valores, data e produtos...");
+    const controller = new AbortController();
 
-      // Set a strict 35 second timeout on fetch using AbortController
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 35000);
+    timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 35000);
 
-      const response = await fetch("/api/transactions/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          imageBase64: base64Data,
-          mimeType: processedMimeType,
-          fast: isFast
-        })
-      });
+    const response = await fetch("/api/transactions/scan", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        imageBase64: base64Data,
+        mimeType: processedMimeType,
+        fast: isFast
+      })
+    });
 
-      clearTimeout(timeoutId);
+    const result = await response.json();
 
-      const result = await response.json();
-
-if (!response.ok) {
-    throw new Error(
+    if (!response.ok) {
+      throw new Error(
         result.details ||
         result.error ||
         `Erro HTTP ${response.status}`
-    );
-}
-      setScanResult(result);
+      );
+    }
 
-      // Populate edit states from Gemini output
-      setEstablishment(result.establishment || '');
-      setAmount(String(result.total || ''));
-      setCategory(result.category || 'Alimentação');
-      setSubcategory(result.subcategory || 'Outros');
-      setDate(result.date || new Date().toISOString().split('T')[0]);
-      setItems(result.items || []);
-      setDescription(result.description || '');
+    setScanResult(result);
+    setEstablishment(result.establishment || '');
+    setAmount(String(result.total || ''));
+    setCategory(result.category || 'Alimentação');
+    setSubcategory(result.subcategory || 'Outros');
+    setDate(result.date || new Date().toISOString().split('T')[0]);
+    setItems(result.items || []);
+    setDescription(result.description || '');
 
-    } catch (err: any) {
-  console.error("Erro ao escanear nota:", err);
+  } catch (err: unknown) {
+    console.error("Erro ao escanear nota:", err);
 
-  const message =
-    err.name === "AbortError"
-      ? "O processamento demorou mais que o limite permitido."
-      : err.message || "Não foi possível processar a nota.";
+    const message = err instanceof Error
+      ? err.name === "AbortError"
+        ? "O processamento demorou mais que o limite permitido."
+        : err.message
+      : "Não foi possível processar a nota.";
 
+    setScanResult(null);
+    setError(message);
+
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    setLoading(false);
+    setLoadingStep("");
+  }
+};
+const handleConfirmScan = () => {
+  if (!establishment || !amount || Number(amount) <= 0) {
+    return;
+  }
+
+  onAddScannedTransaction({
+    description: establishment,
+    amount: Number(amount),
+    category,
+    subcategory,
+    date,
+    type: 'despesa',
+    tags: [
+      'IA-Scan',
+      ...items
+        .slice(0, 2)
+        .map(item => item.split(' ')[0].toLowerCase())
+    ],
+    confidence: scanResult?.confidence || 90,
+    items
+  });
+
+  setSuccessMsg("Lançamento via IA adicionado com sucesso!");
+  setFile(null);
+  setPreviewUrl(null);
   setScanResult(null);
 
-  setError(message);
-}
-      };
-      
-      setScanResult(fallbackResult);
-      setEstablishment(fallbackResult.establishment);
-      setAmount(String(fallbackResult.total));
-      setCategory(fallbackResult.category);
-      setSubcategory(fallbackResult.subcategory);
-      setDate(fallbackResult.date);
-      setItems(fallbackResult.items);
-      setDescription(fallbackResult.description);
-      
-      setError("Conexão instável com o servidor do Gemini. Ativamos o modo de contingência local para você prosseguir!");
-    } finally {
-      setLoading(false);
-      setLoadingStep("");
-    }
-  };
-
-  const handleConfirmScan = () => {
-    if (!establishment || !amount || Number(amount) <= 0) return;
-
-    onAddScannedTransaction({
-      description: establishment,
-      amount: Number(amount),
-      category,
-      subcategory,
-      date,
-      type: 'despesa',
-      tags: ['IA-Scan', ...items.slice(0, 2).map(i => i.split(' ')[0].toLowerCase())],
-      confidence: scanResult?.confidence || 90,
-      items: items
-    });
-
-    // Clear and success message
-    setSuccessMsg("Lançamento via IA adicionado com sucesso!");
-    setFile(null);
-    setPreviewUrl(null);
-    setScanResult(null);
-
-    setTimeout(() => {
-      setSuccessMsg(null);
-    }, 4000);
-  };
-
+  setTimeout(() => {
+    setSuccessMsg(null);
+  }, 4000);
+};
   return (
     <div id="receipt-scanner" className="space-y-8 animate-fade-in max-w-4xl mx-auto text-neutral-200">
       {/* Top Description */}
